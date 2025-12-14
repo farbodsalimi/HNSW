@@ -98,12 +98,23 @@ func (h *HNSW) searchLayer(entryPoint *Node, query []float64, ef, layer int) []*
 	results := make([]*Node, 0, ef)
 	results = append(results, entryPoint)
 	sort.Slice(results, func(i, j int) bool {
-		return EuclideanDistance(query, results[i].Vector) < EuclideanDistance(query, results[j].Vector)
+		return EuclideanDistance(
+			query,
+			results[i].Vector,
+		) < EuclideanDistance(
+			query,
+			results[j].Vector,
+		)
 	})
 
 	for len(candidates) > 0 {
 		candidate := candidates[0]
 		candidates = candidates[1:]
+
+		// Skip if candidate doesn't have this layer
+		if layer >= len(candidate.Friends) {
+			continue
+		}
 
 		for _, friend := range candidate.Friends[layer] {
 			if _, seen := visited[friend.ID]; seen {
@@ -114,6 +125,15 @@ func (h *HNSW) searchLayer(entryPoint *Node, query []float64, ef, layer int) []*
 			if len(results) < ef {
 				results = append(results, friend)
 				candidates = append(candidates, friend)
+				sort.Slice(results, func(i, j int) bool {
+					return EuclideanDistance(
+						query,
+						results[i].Vector,
+					) < EuclideanDistance(
+						query,
+						results[j].Vector,
+					)
+				})
 			} else if EuclideanDistance(query, friend.Vector) < EuclideanDistance(query, results[len(results)-1].Vector) {
 				results[len(results)-1] = friend
 				candidates = append(candidates, friend)
@@ -133,6 +153,11 @@ func (h *HNSW) searchLayer(entryPoint *Node, query []float64, ef, layer int) []*
 
 func (h *HNSW) connectNewNode(newNode *Node, neighbors []*Node, level int) {
 	for _, neighbor := range neighbors {
+		// Skip neighbors that don't have this level
+		if level >= len(neighbor.Friends) {
+			continue
+		}
+
 		if len(neighbor.Friends[level]) < h.MaxEdges {
 			neighbor.Friends[level] = append(neighbor.Friends[level], newNode)
 		} else {
