@@ -1,6 +1,6 @@
 module github.com/farbodsalimi/HNSW
 
-go 1.22.0
+go 1.27
 
 require github.com/stretchr/testify v1.9.0
 
