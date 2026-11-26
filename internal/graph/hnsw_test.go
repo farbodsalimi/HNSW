@@ -1,6 +1,7 @@
 package graph_test
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -91,13 +92,7 @@ func TestGraphConnections(t *testing.T) {
 	for _, node := range hnsw.Nodes {
 		for level, friends := range node.Friends {
 			for _, friend := range friends {
-				found := false
-				for _, friendFriend := range friend.Friends[level] {
-					if friendFriend == node {
-						found = true
-						break
-					}
-				}
+				found := slices.Contains(friend.Friends[level], node)
 				assert.True(t, found, "Node %d is not correctly connected to its friend %d at level %d", node.ID, friend.ID, level)
 			}
 		}
